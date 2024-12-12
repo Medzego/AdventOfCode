@@ -35,54 +35,43 @@ int BigBrain::filteredMuls()
 
 int BigBrain::filteredAndEnabledMuls()
 {
+    rawData = "do()" + rawData + "don't()";
     int result = 0;
     std::regex patternMul("mul\\((\\d+),(\\d+)\\)");
     std::regex patternDo("do\\(\\)");
     std::regex patternDont("don't\\(\\)");
 
-    std::regex patternStart("(^)(.*?)(don't\\(\\))");
-    std::regex patternDoDont("(do\\(\\))(.*?)(don't\\(\\))"); // TODO : ajouter la possibilité d'avoir le début de chaine de caratères (^) à la place de do
-
     std::smatch correspondancesMul;
     std::smatch correspondancesDo;
     std::smatch correspondancesDont;
-    std::smatch correspondancesDoDont;
-    std::smatch correspondancesStart;
 
+    auto begin = rawData.cbegin();
+    auto end = rawData.cend();
 
-    auto beginRaw = rawData.cbegin();
-    auto endRaw = rawData.cend();
+    auto itDo = begin, itDont = begin;
 
-    std::regex_search(beginRaw, endRaw, correspondancesStart, patternStart);
-    // std::cout << correspondancesDoDont[1]<< std::endl;
-    // std::cout << "coucou" << std::endl;
-
-    auto begin = std::string(correspondancesStart[2]).cbegin();
-    auto end = std::string(correspondancesStart[2]).cend();
-
-    while (std::regex_search(begin, end, correspondancesMul, patternMul))
+    bool mulsEnabled = true;
+    while (begin != end)
     {
-        std::cout << correspondancesMul[1] << "*" << correspondancesMul[2] << std::endl;
-        result += stoi(correspondancesMul[1])*stoi(correspondancesMul[2]);
-        begin = correspondancesMul.suffix().first;
-    }
+        std::regex_search(begin, end, correspondancesDo, patternDo);
+        itDo = correspondancesDo.suffix().first;
 
-    while (std::regex_search(beginRaw, endRaw, correspondancesDoDont, patternDoDont))
-    {
-        // std::cout << correspondancesDoDont[1]<< std::endl;
-        // std::cout << "coucou" << std::endl;
-
-        auto begin = std::string(correspondancesDoDont[2]).cbegin();
-        auto end = std::string(correspondancesDoDont[2]).cend();
-
-        while (std::regex_search(begin, end, correspondancesMul, patternMul))
+        std::regex_search(begin, end, correspondancesDont, patternDont);
+        itDont = correspondancesDont.suffix().first;
+        while (itDont < itDo)
         {
-            // std::cout << correspondances[1] << "*" << correspondances[2] << std::endl;
-            result += stoi(correspondancesMul[1])*stoi(correspondancesMul[2]);
-            begin = correspondancesMul.suffix().first;
+            std::regex_search(itDont, end, correspondancesDont, patternDont);
+            itDont = correspondancesDont.suffix().first;
         }
 
-        beginRaw = correspondancesDoDont.suffix().first;
+        while (std::regex_search(itDo, itDont, correspondancesMul, patternMul))
+        {
+            // std::cout << correspondancesMul[1] << "*" << correspondancesMul[2] << std::endl;
+            result += stoi(correspondancesMul[1])*stoi(correspondancesMul[2]);
+            itDo = correspondancesMul.suffix().first;
+        }
+
+        begin = itDont;
     }
 
     return result;
